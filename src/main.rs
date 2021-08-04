@@ -9,6 +9,7 @@ fn main() {
             Arg::with_name("decompress")
                 .short("d")
                 .long("decompress")
+                .takes_value(false)
                 .help("decompress a file"),
         )
         .get_matches();
