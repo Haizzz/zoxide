@@ -1,10 +1,13 @@
 extern crate clap;
 use clap::ArgMatches;
-use std::fs;
+use std::{fmt::UpperHex, fs};
 
 use crate::utils::exit_with_message;
 
 mod utils;
+
+// 0xFD2FB528 as u8
+const MAGIC_NUMBER: [u8; 4] = [40, 181, 47, 253];
 
 fn read_or_error(path: &str) -> Vec<u8> {
     // given a file path, read the content with error handling
@@ -22,9 +25,15 @@ fn compress(path: &str) {}
 
 fn decompress(path: &str) {
     let content = read_or_error(path);
-    println!("{}", content.len());
-    println!("{:02x}", content[0]);
-    println!("{:02x}", content[1]);
+
+    // parse the content of the file
+    let magic_number = &content[0..4];
+    for i in 0..4 {
+        if MAGIC_NUMBER[i] != magic_number[i] {
+            exit_with_message("Corrupted file: magic number does not match");
+        }
+    }
+    println!("{:?}", magic_number);
 }
 
 pub fn run(args: ArgMatches) -> () {
