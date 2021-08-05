@@ -1,6 +1,5 @@
 extern crate clap;
 use clap::{App, Arg};
-use std::fs;
 use zoxide::run;
 
 fn main() {
@@ -12,11 +11,15 @@ fn main() {
                 .takes_value(false)
                 .help("decompress a file"),
         )
+        .arg(
+            Arg::with_name("file")
+                .short("f")
+                .long("file")
+                .takes_value(true)
+                .index(1)
+                .required(true)
+                .help("file to operate on"),
+        )
         .get_matches();
     run(matches);
-
-    let file_content = fs::read("README.md.zst").expect("failed to read file");
-    println!("{}", file_content.len());
-    println!("{:02x}", file_content[0]);
-    println!("{:02x}", file_content[1]);
 }
