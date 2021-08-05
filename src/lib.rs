@@ -1,8 +1,8 @@
 extern crate clap;
 use clap::ArgMatches;
-use std::{fmt::UpperHex, fs};
+use std::fs;
 
-use crate::utils::exit_with_message;
+use crate::utils::{bit_at_index, exit_with_message};
 
 mod utils;
 
@@ -33,7 +33,15 @@ fn decompress(path: &str) {
             exit_with_message("Corrupted file: magic number does not match");
         }
     }
-    println!("{:?}", magic_number);
+
+    // parse frame header
+    let frame_header_descriptor = content[4];
+    let frame_content_size_flag = bit_at_index(frame_header_descriptor, 6);
+    let fcs_field_size = bit_at_index(frame_header_descriptor, 7);
+    let single_segment_flag = bit_at_index(frame_header_descriptor, 5);
+    let content_checksum_flag = bit_at_index(frame_header_descriptor, 2);
+    let dictionary_id_flag = bit_at_index(frame_header_descriptor, 0);
+    let did_field_size = bit_at_index(frame_header_descriptor, 0);
 }
 
 pub fn run(args: ArgMatches) -> () {
