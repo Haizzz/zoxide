@@ -67,20 +67,31 @@ fn decompress(path: &str) {
     // TODO: check if the file is smaller than fcs field size
     // TODO: check if reserved or unused bit is set
 
-    // TODO: figure out how to make this not mutable
     let window_size: u8;
-    if single_segment_flag {
-        // no window descriptor
-        // window size is frame content size
-        // TODO: parse frame content size
-        window_size = 1;
-    } else {
+    if !single_segment_flag {
         let window_descriptor = content.remove(0);
         let window_log = 10 + (window_descriptor >> 3);
         let window_base = 1 << window_log;
         let window_add = (window_base / 8) * (window_descriptor & 0b111);
         window_size = window_base + window_add;
+    } else {
+        // no window descriptor
+        // window size is frame content size
+        // TODO: parse frame content size
+        window_size = 1;
     }
+
+    // parse dictionary id
+    let dictionary_id: Vec<u8>;
+    if (did_field_size > 0) {
+        dictionary_id = content.drain(0..did_field_size).collect();
+    } else {
+        dictionary_id = vec![0];
+    }
+
+    println!("dictionary id = {:?}", dictionary_id);
+
+    // frame content size
 
     println!("window size = {:?}", window_size);
 }
