@@ -24,10 +24,10 @@ fn read_or_error(path: &str) -> Vec<u8> {
 fn compress(path: &str) {}
 
 fn decompress(path: &str) {
-    let content = read_or_error(path);
+    let mut content = read_or_error(path);
 
     // parse the content of the file
-    let magic_number = &content[0..4];
+    let magic_number: Vec<u8> = content.drain(0..4).collect();
     for i in 0..4 {
         if MAGIC_NUMBER[i] != magic_number[i] {
             exit_with_message("Corrupted file: magic number does not match");
@@ -35,7 +35,8 @@ fn decompress(path: &str) {
     }
 
     // parse frame header
-    let frame_header_descriptor = content[4];
+    // TODO: add links to the spec for each of these fields
+    let frame_header_descriptor = content.remove(0);
     let frame_content_size_flag = frame_header_descriptor >> 6;
     let single_segment_flag = bit_at_index(frame_header_descriptor, 5);
     let content_checksum_flag = bit_at_index(frame_header_descriptor, 2);
@@ -49,11 +50,9 @@ fn decompress(path: &str) {
         _ => exit_with_message("Corrupted file: dictionary id flag is corrupted"),
     };
 
-    let mut fcs_field_size = 0;
-    if frame_content_size_flag == 0 {
-        if single_segment_flag {
-            fcs_field_size = 1;
-        }
+    let fcs_field_size: u8;
+    if frame_content_size_flag == 0 && single_segment_flag {
+        fcs_field_size = 1;
     } else {
         fcs_field_size = 1 << frame_content_size_flag;
     }
@@ -67,6 +66,23 @@ fn decompress(path: &str) {
 
     // TODO: check if the file is smaller than fcs field size
     // TODO: check if reserved or unused bit is set
+
+    // TODO: figure out how to make this not mutable
+    let window_size: u8;
+    if single_segment_flag {
+        // no window descriptor
+        // window size is frame content size
+        // TODO: parse frame content size
+        window_size = 1;
+    } else {
+        let window_descriptor = content.remove(0);
+        let window_log = 10 + (window_descriptor >> 3);
+        let window_base = 1 << window_log;
+        let window_add = (window_base / 8) * (window_descriptor & 0b111);
+        window_size = window_base + window_add;
+    }
+
+    println!("window size = {:?}", window_size);
 }
 
 pub fn run(args: ArgMatches) -> () {
