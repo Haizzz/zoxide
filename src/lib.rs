@@ -36,12 +36,27 @@ fn decompress(path: &str) {
 
     // parse frame header
     let frame_header_descriptor = content[4];
-    let frame_content_size_flag = bit_at_index(frame_header_descriptor, 6);
-    let fcs_field_size = bit_at_index(frame_header_descriptor, 7);
+    let frame_content_size_flag = frame_header_descriptor >> 6;
     let single_segment_flag = bit_at_index(frame_header_descriptor, 5);
     let content_checksum_flag = bit_at_index(frame_header_descriptor, 2);
     let dictionary_id_flag = bit_at_index(frame_header_descriptor, 0);
     let did_field_size = bit_at_index(frame_header_descriptor, 0);
+
+    let mut fcs_field_size = 0;
+    if frame_content_size_flag == 0 {
+        if single_segment_flag {
+            fcs_field_size = 1;
+        }
+    } else {
+        fcs_field_size = 1 << frame_content_size_flag;
+    }
+
+    println!("frame content size flag: {:?}", frame_content_size_flag);
+    println!("single segment flag: {:?}", single_segment_flag);
+    println!("content checksum: {:?}", content_checksum_flag);
+    println!("dictionary id flag: {:?}", dictionary_id_flag);
+    println!("did field size: {:?}", did_field_size);
+    println!("fcs field size: {:?}", fcs_field_size);
 }
 
 pub fn run(args: ArgMatches) -> () {
