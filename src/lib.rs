@@ -39,8 +39,15 @@ fn decompress(path: &str) {
     let frame_content_size_flag = frame_header_descriptor >> 6;
     let single_segment_flag = bit_at_index(frame_header_descriptor, 5);
     let content_checksum_flag = bit_at_index(frame_header_descriptor, 2);
-    let dictionary_id_flag = bit_at_index(frame_header_descriptor, 0);
-    let did_field_size = bit_at_index(frame_header_descriptor, 0);
+    let dictionary_id_flag = frame_header_descriptor & 3;
+    let did_field_size = match dictionary_id_flag {
+        0 => 0,
+        1 => 1,
+        2 => 2,
+        3 => 4,
+        // dictionary_id_flag is a 2 bit flag (0, 1, 2, or 3), the case below would signify corruption
+        _ => exit_with_message("Corrupted file: dictionary id flag is corrupted"),
+    };
 
     let mut fcs_field_size = 0;
     if frame_content_size_flag == 0 {
@@ -57,6 +64,9 @@ fn decompress(path: &str) {
     println!("dictionary id flag: {:?}", dictionary_id_flag);
     println!("did field size: {:?}", did_field_size);
     println!("fcs field size: {:?}", fcs_field_size);
+
+    // TODO: check if the file is smaller than fcs field size
+    // TODO: check if reserved or unused bit is set
 }
 
 pub fn run(args: ArgMatches) -> () {
