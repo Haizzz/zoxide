@@ -50,12 +50,14 @@ fn decompress(path: &str) {
         _ => exit_with_message("Corrupted file: dictionary id flag is corrupted"),
     };
 
-    let fcs_field_size: u8;
+    let fcs_field_size: usize;
     if frame_content_size_flag == 0 && single_segment_flag {
         fcs_field_size = 1;
     } else {
         fcs_field_size = 1 << frame_content_size_flag;
     }
+
+    println!("header byte is {:?}", frame_header_descriptor.to_be_bytes());
 
     println!("frame content size flag: {:?}", frame_content_size_flag);
     println!("single segment flag: {:?}", single_segment_flag);
@@ -77,13 +79,14 @@ fn decompress(path: &str) {
     } else {
         // no window descriptor
         // window size is frame content size
-        // TODO: parse frame content size
-        window_size = 1;
+        window_size = 0;
     }
+
+    println!("window size = {:?}", window_size);
 
     // parse dictionary id
     let dictionary_id: Vec<u8>;
-    if (did_field_size > 0) {
+    if did_field_size > 0 {
         dictionary_id = content.drain(0..did_field_size).collect();
     } else {
         dictionary_id = vec![0];
@@ -92,8 +95,31 @@ fn decompress(path: &str) {
     println!("dictionary id = {:?}", dictionary_id);
 
     // frame content size
-
-    println!("window size = {:?}", window_size);
+    let frame_content_size: u64;
+    if fcs_field_size > 0 {
+        // TODO: check if there's enough data to read the fcs
+        let fcs_bytes: Vec<u8> = content.drain(0..fcs_field_size).collect();
+        let fcs_bytes: Vec<u64> = fcs_bytes.iter().map(|b| u64::from(b.clone())).collect();
+        frame_content_size = match fcs_field_size {
+            1 => fcs_bytes[0],
+            2 => (fcs_bytes[0] | (fcs_bytes[1] << 8)) + 256,
+            4 => fcs_bytes[0] | (fcs_bytes[1] << 8) | (fcs_bytes[2] << 16) | (fcs_bytes[3] << 24),
+            8 => {
+                fcs_bytes[0]
+                    | (fcs_bytes[1] << 8)
+                    | (fcs_bytes[2] << 16)
+                    | (fcs_bytes[3] << 24)
+                    | (fcs_bytes[4] << 32)
+                    | (fcs_bytes[5] << 40)
+                    | (fcs_bytes[6] << 48)
+                    | (fcs_bytes[7] << 56)
+            }
+            _ => exit_with_message("Corrupted file: fcs_field_size cannot is invalid"),
+        };
+    } else {
+        frame_content_size = 0;
+    }
+    println!("frame content size = {:?}", frame_content_size);
 }
 
 pub fn run(args: ArgMatches) -> () {
