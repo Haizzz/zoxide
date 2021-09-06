@@ -36,10 +36,10 @@ pub fn decode_header(file_content: &mut Vec<u8>) {
     // TODO: check if the file is smaller than fcs field size
     // TODO: check if reserved or unused bit is set
 
-    let window_size: u8;
+    let window_size: u64;
     if !single_segment_flag {
-        let window_descriptor = file_content.remove(0);
-        let window_log = 10 + (window_descriptor >> 3);
+        let window_descriptor = u64::from(file_content.remove(0));
+        let window_log = u64::from(10 + (window_descriptor >> 3));
         let window_base = 1 << window_log;
         let window_add = (window_base / 8) * (window_descriptor & 0b111);
         window_size = window_base + window_add;
@@ -91,9 +91,9 @@ pub fn decode_header(file_content: &mut Vec<u8>) {
     // TODO: read blocks and parse them
     let block_header_vec: Vec<u8> = file_content.drain(0..3).collect();
     println!("block header is: {:?}", block_header_vec);
-    let block_header = u64::from(block_header_vec[0])
-        | u64::from(block_header_vec[1]) << 8
-        | u64::from(block_header_vec[2]) << 16;
+    let block_header = u32::from(block_header_vec[0])
+        | u32::from(block_header_vec[1]) << 8
+        | u32::from(block_header_vec[2]) << 16;
     let last_block = block_header & 1 != 0;
     let block_type = (block_header >> 1) & 3;
     let block_size = block_header >> 3;
