@@ -37,9 +37,23 @@ fn decompress(path: &str) {
         }
     }
 
-    decode_header(&mut content);
+    let frame_header = decode_header(&mut content);
     println!("remaining content = {:?}", content);
     println!("remaining content = {:?}", content.len());
+
+    // TODO: read blocks and parse them
+    let block_header_vec: Vec<u8> = content.drain(0..3).collect();
+    println!("block header is: {:?}", block_header_vec);
+    let block_header = u32::from(block_header_vec[0])
+        | u32::from(block_header_vec[1]) << 8
+        | u32::from(block_header_vec[2]) << 16;
+    let last_block = block_header & 1 != 0;
+    let block_type = (block_header >> 1) & 3;
+    let block_size = block_header >> 3;
+
+    println!("last block: {:?}", last_block);
+    println!("block type: {:?}", block_type);
+    println!("block size: {:?}", block_size);
 }
 
 pub fn run(args: ArgMatches) -> () {

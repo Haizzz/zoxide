@@ -1,7 +1,7 @@
 use crate::core::format::FrameHeader;
 use crate::utils::{bit_at_index, exit_with_message};
 
-pub fn decode_header(file_content: &mut Vec<u8>) {
+pub fn decode_header(file_content: &mut Vec<u8>) -> FrameHeader {
     // parse frame header
     // TODO: add links to the spec for each of these fields
     let frame_header_descriptor = file_content.remove(0);
@@ -95,26 +95,12 @@ pub fn decode_header(file_content: &mut Vec<u8>) {
     }
     println!("frame content size = {:?}", frame_content_size);
 
-    let header = FrameHeader {
+    FrameHeader {
         single_segment_flag,
         content_checksum_flag,
         did_field_size,
         window_size,
         dictionary_id,
         frame_content_size,
-    };
-
-    // TODO: read blocks and parse them
-    let block_header_vec: Vec<u8> = file_content.drain(0..3).collect();
-    println!("block header is: {:?}", block_header_vec);
-    let block_header = u32::from(block_header_vec[0])
-        | u32::from(block_header_vec[1]) << 8
-        | u32::from(block_header_vec[2]) << 16;
-    let last_block = block_header & 1 != 0;
-    let block_type = (block_header >> 1) & 3;
-    let block_size = block_header >> 3;
-
-    println!("last block: {:?}", last_block);
-    println!("block type: {:?}", block_type);
-    println!("block size: {:?}", block_size);
+    }
 }
