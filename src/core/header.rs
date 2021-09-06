@@ -1,3 +1,4 @@
+use crate::core::format::FrameHeader;
 use crate::utils::{bit_at_index, exit_with_message};
 
 pub fn decode_header(file_content: &mut Vec<u8>) {
@@ -52,12 +53,18 @@ pub fn decode_header(file_content: &mut Vec<u8>) {
     println!("window size = {:?}", window_size);
 
     // parse dictionary id
-    let dictionary_id: Vec<u8>;
-    if did_field_size > 0 {
-        dictionary_id = file_content.drain(0..did_field_size).collect();
-    } else {
-        dictionary_id = vec![0];
-    }
+    let dictionary_id: u32 = match did_field_size {
+        0 => 0,
+        1 => u32::from(file_content.remove(0)),
+        2 => u32::from(file_content.remove(0)) | (u32::from(file_content.remove(0)) << 8),
+        4 => {
+            u32::from(file_content.remove(0))
+                | (u32::from(file_content.remove(1)) << 8)
+                | (u32::from(file_content.remove(2)) << 16)
+                | (u32::from(file_content.remove(3)) << 24)
+        }
+        _ => exit_with_message("Corrupted file: dictionary id field size is corrupted"),
+    };
 
     println!("dictionary id = {:?}", dictionary_id);
 
@@ -87,6 +94,15 @@ pub fn decode_header(file_content: &mut Vec<u8>) {
         frame_content_size = 0;
     }
     println!("frame content size = {:?}", frame_content_size);
+
+    let header = FrameHeader {
+        single_segment_flag,
+        content_checksum_flag,
+        did_field_size,
+        window_size,
+        dictionary_id,
+        frame_content_size,
+    };
 
     // TODO: read blocks and parse them
     let block_header_vec: Vec<u8> = file_content.drain(0..3).collect();

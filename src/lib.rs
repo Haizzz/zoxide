@@ -1,12 +1,13 @@
 extern crate clap;
+
+mod core;
+mod utils;
+
 use clap::ArgMatches;
 use std::fs;
 
-use crate::header::decode_header;
+use crate::core::header::decode_header;
 use crate::utils::exit_with_message;
-
-mod header;
-mod utils;
 
 // 0xFD2FB528 as u8
 const MAGIC_NUMBER: [u8; 4] = [40, 181, 47, 253];
