@@ -9,11 +9,12 @@ pub struct FrameHeader {
     pub frame_content_size: u64,
 }
 
+#[derive(Debug)]
 pub enum BlockType {
-    raw,
-    rle,
-    compressed,
-    reserved,
+    Raw,
+    Rle,
+    Compressed,
+    Reserved,
 }
 
 pub struct BlockHeader {

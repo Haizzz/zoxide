@@ -6,6 +6,7 @@ mod utils;
 use clap::ArgMatches;
 use std::fs;
 
+use crate::core::format::BlockType;
 use crate::core::header::decode_header;
 use crate::utils::exit_with_message;
 
@@ -48,12 +49,28 @@ fn decompress(path: &str) {
         | u32::from(block_header_vec[1]) << 8
         | u32::from(block_header_vec[2]) << 16;
     let last_block = block_header & 1 != 0;
-    let block_type = (block_header >> 1) & 3;
+    let block_type = match (block_header >> 1) & 3 {
+        0 => BlockType::Raw,
+        1 => BlockType::Rle,
+        2 => BlockType::Compressed,
+        3 => BlockType::Reserved,
+        _ => exit_with_message("Invalid block type"),
+    };
     let block_size = block_header >> 3;
 
     println!("last block: {:?}", last_block);
     println!("block type: {:?}", block_type);
     println!("block size: {:?}", block_size);
+
+    if (!last_block) {
+        // recurse here
+    }
+    match block_type {
+        BlockType::Raw => print!("raw block"),
+        BlockType::Rle => print!("rle block"),
+        BlockType::Compressed => print!("compressed block"),
+        BlockType::Reserved => print!("reserved block"),
+    }
 }
 
 pub fn run(args: ArgMatches) -> () {
